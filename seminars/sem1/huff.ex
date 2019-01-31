@@ -64,6 +64,21 @@ defmodule Huffman do
 
     # Huffman tree
     # Going through the frequency list and take the first two nodes, add them together.
-    def huffman([x]) do [x] end
+    def huffman([x]) do
+        [x]
+    end
+    def huffman([{f1, c1}, {f2, c2} | tail]) do
+        huffman(insert_tree({f1+f2, {c1, c2}}, tail))
+    end
 
+    # Insert into the sorted list.
+    def insert_tree(n, []) do
+        [n]
+    end
+    def insert_tree({f, tup}, [{f2, tup2}|t]) when f <= f2 do
+        [{f, tup}, {f2, tup2} | t]
+    end
+    def insert_tree({f, tup}, [{f2, tup2}|t]) when f > f2 do
+        [{f2, tup2} | insert({f, tup}, t)]
+    end
 end
