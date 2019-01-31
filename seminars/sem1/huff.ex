@@ -17,10 +17,12 @@ defmodule Huffman do
         #tree = tree(sample)
     #end
 
+    # Sets the frequency of the letters and sorts the frequency.
     def tree(sample) do
         freq = freq(sample)
+        freq = isort(freq)
+        huffman(freq)
     end
-
 
     def freq(sample) do
         freq(sample, [])
@@ -45,6 +47,23 @@ defmodule Huffman do
         [head | add_freq(char, tail)]
     end
 
+    # Sorting and inserting the frequency in correct order
+    def isort(list) do isort(list, []) end
+    def isort([], sorted) do sorted end
+    def isort([head | tail], sorted) do
+        isort(tail, insert(head, sorted))
+    end
+
+    def insert(f, []) do [f] end
+    def insert({f1, c1}, [{f2, c2} | tail]) when f1 <= f2 do
+        [{f1, c1}, {f2, c2} | tail]
+    end
+    def insert({f1, c1}, [{f2, c2} | tail]) when f1 > f2 do
+        [{f2, c2} | insert({f1, c1}, tail)]
+    end
+
     # Huffman tree
-    def huffman([]) do {} end
+    # Going through the frequency list and take the first two nodes, add them together.
+    def huffman([x]) do [x] end
+
 end
