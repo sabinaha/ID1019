@@ -1,84 +1,112 @@
 defmodule Huffman do
 
-    #def sample do
-        #'the quick brown fox jumps over the lazy dog
-        #this is a sample text that we will use when we build
-        # up a table we will only handle lower case letters and
-        #no punctuation symbols the frequency will of course not
-        #represent english but it is probably not that far off'
-    #end
+  def sample do
+        'the quick brown fox jumps over the lazy dog
+        this is a sample text that we will use when we build
+         up a table we will only handle lower case letters and
+        no punctuation symbols the frequency will of course not
+        represent english but it is probably not that far off'
+  end
 
-    #def text() do
-        #'this is something that we should encode'
-    #end
+  def text() do
+    'this is something that we should encode'
+  end
 
-    #def test do
-        #sample = sample()
-        #tree = tree(sample)
-    #end
+  def test do
+    sample = sample()
+    text = text()
+    tree = tree(sample)
+    encode = encode_table(tree)
+    seq = encode(text, encode)
+    decode = decode_table(tree)
+    decode(seq, decode)
+  end
+  # Construct the Huffman tree from a text sample.
+  def tree(sample) do
+    freq = freq(sample)
+    huffman(freq)
+  end
 
-    # Sets the frequency of the letters and sorts the frequency.
-    def tree(sample) do
-        freq = freq(sample)
-        freq = isort(freq)
-        huffman(freq)
-    end
+  # Compute the frequencies of all the characters in the
+  # sample text and return a list of tuples {char, freq}.
+  def freq(sample), do: freq(sample, [])
 
-    def freq(sample) do
-        freq(sample, [])
-    end
+  def freq([], freq) do freq end
+  def freq([char | rest], freq) do
+    freq(rest, update(char, freq))
+  end
 
-    def freq([], freq) do freq end
+  def update(char, []), do: [{char, 1}]
+  def update(char, [{char, n} | freq]) do
+    [{char, n + 1} | freq]
+  end
+  def update(char, [elem | freq]) do
+    [elem | update(char, freq)]
+  end
 
-    def freq([char | rest], freq) do
-        freq(rest, add_freq(char, freq))
-    end
+  # Build the actual Huffman tree inserting a character at
+  # time based on the frequency.
+  def huffman(freq) do
+    sorted = Enum.sort(freq, fn({_, x}, {_, y}) -> x < y end)
+    huffman_tree(sorted)
+  end
 
-    # Adds the frequency to each letter.
-    def add_freq(char, []) do
-        [{1, char}]
-    end
+  def huffman_tree([{tree, _}]) do tree end
+  def huffman_tree([{a, af}, {b, bf} | rest]) do
+    huffman_tree(insert({{a, b}, af + bf}, rest))
+  end
 
-    def add_freq(char, [{f, char} | tail]) do
-        [{f+1, char} | tail]
-    end
+  def insert({a, af}, []) do [{a, af}] end
+  def insert({a, af}, [{b, bf} | rest]) when af < bf do
+    [{a, af}, {b, bf} | rest]
+  end
+  def insert({a, af}, [{b, bf} | rest]) do
+    [{b, bf} | insert({a, af}, rest)]
+  end
 
-    def add_freq(char, [head | tail]) do
-        [head | add_freq(char, tail)]
-    end
+  # Build the encoding table.
+  def encode_table(tree) do
+    codes(tree, [])
+    # codes_better(tree, [], [])
+  end
 
-    # Sorting and inserting the frequency in correct order
-    def isort(list) do isort(list, []) end
-    def isort([], sorted) do sorted end
-    def isort([head | tail], sorted) do
-        isort(tail, insert(head, sorted))
-    end
+  # Traverse the Huffman tree and build a binary encoding
+  # for each character.
+  def codes({a, b}, sofar) do
+    as = codes(a, [0 | sofar])
+    bs = codes(b, [1 | sofar])
+    as ++ bs
+  end
+  def codes(a, code) do
+    [{a, Enum.reverse(code)}]
+  end
 
-    def insert(f, []) do [f] end
-    def insert({f1, c1}, [{f2, c2} | tail]) when f1 <= f2 do
-        [{f1, c1}, {f2, c2} | tail]
-    end
-    def insert({f1, c1}, [{f2, c2} | tail]) when f1 > f2 do
-        [{f2, c2} | insert({f1, c1}, tail)]
-    end
+  def encode(text, table) do encode(text, table, table) end
 
-    # Huffman tree
-    # Going through the frequency list and take the first two nodes, add them together.
-    def huffman([x]) do
-        [x]
-    end
-    def huffman([{f1, c1}, {f2, c2} | tail]) do
-        huffman(insert_tree({f1+f2, {c1, c2}}, tail))
-    end
+  def encode([], _, _) do [] end
+  def encode([char | rest], [{char, bin} | _restTable], table) do
+    bin ++ encode(rest, table, table)
+  end
+  def encode(letterList, [_c | tail], table) do
+    encode(letterList, tail, table)
+  end
 
-    # Insert into the sorted list.
-    def insert_tree(n, []) do
-        [n]
+  # Decode table
+  def decode_table(tree) do codes(tree, []) end
+
+  # Decode text
+  def decode([], _) do [] end
+  def decode(seq, table) do 
+    {char, rest} = decode_char(seq, 1, table)
+    [char | decode(rest, table)]
+  end
+  def decode_char(seq, n, table) do
+    {code, rest} = Enum.split(seq, n)
+    case List.keyfind(table, code, 1) do
+      {char, _} ->
+        {char, rest}
+      nil ->
+        decode_char(seq, n+1, table)
     end
-    def insert_tree({f, tup}, [{f2, tup2}|t]) when f <= f2 do
-        [{f, tup}, {f2, tup2} | t]
-    end
-    def insert_tree({f, tup}, [{f2, tup2}|t]) when f > f2 do
-        [{f2, tup2} | insert({f, tup}, t)]
-    end
+  end
 end
